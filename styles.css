@@ -425,6 +425,12 @@ p {
     .trial-progress {
         font-size: 1em;
     }
+
+    .abort-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 1em;
+    }
 }
 
 /* Loading Animation */
@@ -566,6 +572,38 @@ select:focus {
     font-size: 1.2em;
     font-weight: 700;
     color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Abort Task Button */
+.abort-btn {
+    background: #e2e8f0;
+    color: #4a5568;
+    border: 2px solid #cbd5e0;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-size: 1.2em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.abort-btn:hover {
+    background: #fc8181;
+    color: white;
+    border-color: #f56565;
+    transform: scale(1.1);
+}
+
+.abort-btn:active {
+    transform: scale(0.95);
 }
 
 #phase-indicator {
