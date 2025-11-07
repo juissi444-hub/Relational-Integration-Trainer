@@ -87,6 +87,126 @@ This implementation faithfully replicates every detail from the original study:
 
 **Key Finding**: Relational integration capacity is THE fundamental predictor of fluid reasoning.
 
+## 🧠 Experimental Training Modes
+
+**NEW!** In addition to the exact study replications, this implementation includes **9 experimental training modes** designed to potentially enhance fluid intelligence through various cognitive training strategies.
+
+> **Important Scientific Note**: Evidence for "far transfer" (training on one task improving general intelligence) is limited and controversial in cognitive science. These modes are experimental and provided for exploration and research purposes. The strongest evidence is for near transfer (getting better at the specific task itself).
+
+### Available Experimental Modes
+
+#### 1. **Adaptive Difficulty Mode** 🎯
+- **Method**: AI-adjusted challenge level based on real-time performance
+- **How it works**:
+  - Starts at 3 objects, 6 seconds per trial
+  - If 80%+ accuracy: increase difficulty (more objects or less time)
+  - If <60% accuracy: decrease difficulty
+  - Maximum: 7 objects, 3 seconds
+- **Evidence**: Adaptive training keeps learners at optimal challenge level (Zone of Proximal Development)
+- **Session**: 50 trials with continuous adaptation
+
+#### 2. **Progressive Complexity Training** 📈
+- **Method**: 4-week structured progression program
+- **Weekly Protocol**:
+  - **Week 1**: 3 objects, 7s, clean grids (30 trials)
+  - **Week 2**: Mixed 3-5 objects, 6s (40 trials)
+  - **Week 3**: 5 objects, 5.5s, interference (50 trials)
+  - **Week 4**: 7 objects, 5s, high interference (60 trials)
+- **Evidence**: Gradual scaffolding matches natural skill acquisition
+- **Progress**: Automatically saved between sessions
+
+#### 3. **Speed-Accuracy Training** ⚡
+- **Method**: Train rapid pattern detection under time pressure
+- **4 Modes**:
+  - **Accuracy Priority**: Unlimited time (focus on correctness)
+  - **Balanced**: 5.5 seconds (original study timing)
+  - **Speed Priority**: 3 seconds (rapid processing)
+  - **Blitz Mode**: 2 seconds (extreme speed)
+- **Evidence**: Processing speed highly correlated with fluid intelligence (r ≈ .50)
+- **Session**: 40 trials per mode
+
+#### 4. **Multi-Relational Integration** 🎨
+- **Method**: Track TWO pattern dimensions simultaneously
+- **Task**:
+  - Detect number patterns (last character, as usual)
+  - PLUS detect color patterns (colored dots on cells)
+  - Press SPACE if EITHER pattern is present
+- **Evidence**: Higher relational complexity = better Gf predictor (binding hypothesis)
+- **Session**: 50 trials with dual tracking
+
+#### 5. **Dual N-Back Hybrid** 🔄
+- **Method**: Combine relational integration + n-back memory
+- **Primary Task**: Detect patterns (standard relational integration)
+- **Secondary Task**: Does current grid match N trials back?
+- **Progression**: Automatic advancement from 1-back → 2-back → 3-back
+- **Evidence**: Dual n-back training has some (controversial) evidence for IQ gains
+- **Session**: 60 trials with progressive difficulty
+
+#### 6. **Interference Management** 🛡️
+- **Method**: Progressive distractor resistance training
+- **4 Levels**:
+  - **Level 1**: Clean grids (baseline)
+  - **Level 2**: Visual noise with similar symbols
+  - **Level 3**: Partial conflicting patterns
+  - **Level 4**: High interference + time pressure (4s)
+- **Evidence**: Trains selective attention and inhibitory control (executive functions)
+- **Session**: 40 trials per level
+
+#### 7. **Working Memory Load Variation** 💾
+- **Method**: Manipulate trial-to-trial persistence
+- **4 Modes**:
+  - **Easy**: 4 items always carry over (low WM load)
+  - **Medium**: 1-4 items carry over (original study)
+  - **Hard**: 0-1 items carry over (high WM load)
+  - **Extreme**: All new items every trial (maximum load)
+- **Evidence**: WM capacity training may strengthen cognitive resources
+- **Session**: 50 trials per mode
+
+#### 8. **Meta-Cognitive Training** 🧘
+- **Method**: Self-monitoring + strategy development
+- **Features**:
+  - Rate confidence (1-5) after each trial
+  - Track calibration (confidence vs. accuracy alignment)
+  - Receive strategy tips when struggling
+  - Build metacognitive awareness
+- **Evidence**: Metacognition improves learning across domains
+- **Session**: 40 trials with confidence ratings
+
+#### 9. **Gamified Progress System** 🏆
+- **Method**: Long-term motivation and engagement tracking
+- **Features**:
+  - Daily streak tracking (current & longest)
+  - Performance graphs over time
+  - 5 Badge levels: Bronze → Silver → Gold → Platinum → Diamond
+  - Session history and statistics
+  - Progress persistence via localStorage
+- **Evidence**: Sustained engagement crucial for training effectiveness (adherence)
+- **Access**: Dashboard available anytime from main menu
+
+### Using Experimental Modes
+
+1. **Select a mode** from the "Experimental Training Modes" section on the welcome screen
+2. **Configure settings** (where applicable, e.g., speed mode, WM load)
+3. **Complete training session** (30-60 trials depending on mode)
+4. **View results** including mode-specific metrics
+5. **Track progress** automatically saved to Gamified Progress dashboard
+
+### Scientific Recommendations
+
+**For maximum cognitive benefit**:
+1. **Start with Adaptive Mode** (strongest theoretical foundation)
+2. **Add Progressive Complexity** for long-term engagement
+3. **Use Gamified Progress** to maintain motivation
+4. **Train consistently** (research shows 20+ sessions needed for effects)
+5. **Combine multiple modes** rather than relying on just one
+
+**Realistic Expectations**:
+- ✅ You WILL improve at the specific task (near transfer)
+- ⚠️ Transfer to general fluid IQ is uncertain (controversial evidence)
+- ⚠️ Requires sustained practice (weeks/months, not days)
+- ⚠️ Individual differences in training response
+- ✅ May provide cognitive engagement and mental exercise benefits regardless
+
 ## Quick Start
 
 ### Basic Usage
