@@ -37,6 +37,28 @@ class RelationalIntegrationTask {
         this.responded = false;
         this.timerInterval = null;
 
+        // Experimental Modes State
+        this.experimentalMode = null;
+        this.adaptiveDifficulty = {
+            numObjects: 3,
+            trialDuration: 6000,
+            recentAccuracy: [],
+            level: 1
+        };
+        this.progressiveWeek = 1;
+        this.speedMode = 'balanced'; // accuracy, balanced, speed, blitz
+        this.colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'cyan', 'teal', 'indigo'];
+        this.nBackLevel = 1;
+        this.nBackHistory = [];
+        this.nBackResponse = null;
+        this.interferenceLevel = 1;
+        this.wmLoadMode = 'medium'; // easy, medium, hard, extreme
+        this.confidenceData = [];
+        this.currentConfidence = null;
+
+        // Progress tracking (persisted in localStorage)
+        this.progressData = this.loadProgressData();
+
         this.initializeEventListeners();
     }
 
@@ -83,6 +105,31 @@ class RelationalIntegrationTask {
             e.preventDefault(); // Prevent double-firing on some devices
             this.handleMobileResponse();
         });
+
+        // Experimental mode selection
+        document.querySelectorAll('.select-exp-btn[data-mode]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mode = e.target.dataset.mode;
+                this.selectExperimentalMode(mode);
+            });
+        });
+
+        // Experimental mode configuration
+        document.getElementById('exp-mode-back-btn').addEventListener('click', () => this.showWelcome());
+        document.getElementById('exp-mode-start-btn').addEventListener('click', () => this.startExperimentalMode());
+
+        // Confidence rating
+        document.querySelectorAll('.confidence-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const confidence = parseInt(e.target.closest('.confidence-btn').dataset.confidence);
+                this.recordConfidence(confidence);
+            });
+        });
+
+        // Progress dashboard
+        document.getElementById('dashboard-back-btn').addEventListener('click', () => this.showWelcome());
+        document.getElementById('dashboard-continue-btn').addEventListener('click', () => this.continueTrainingFromDashboard());
+        document.getElementById('dashboard-clear-btn').addEventListener('click', () => this.clearProgressData());
     }
 
     // ==================== Navigation ====================
@@ -365,6 +412,9 @@ class RelationalIntegrationTask {
             case 'five-same':
                 this.insertFiveSame(grid, symbols);
                 break;
+            case 'seven-same':
+                this.insertSevenSame(grid, symbols);
+                break;
             case 'three-different':
                 this.insertThreeDifferent(grid, symbols);
                 break;
@@ -396,6 +446,24 @@ class RelationalIntegrationTask {
             [1, 3, 4, 5, 6],  // T down
             [0, 3, 4, 6, 7],  // T left
             [1, 2, 4, 5, 8]   // T right
+        ];
+
+        const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+        const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+
+        pattern.forEach(idx => {
+            const prefix = grid[idx].substring(0, 2);
+            grid[idx] = prefix + symbol;
+        });
+    }
+
+    insertSevenSame(grid, symbols) {
+        // 7-object patterns: larger patterns (experimental for Week 4 progressive mode)
+        const patterns = [
+            [0, 1, 2, 3, 4, 5, 6],  // Top row + middle row
+            [0, 1, 2, 4, 6, 7, 8],  // Top row + bottom row
+            [0, 1, 3, 4, 5, 7, 8],  // Outer ring without corners
+            [1, 2, 3, 4, 5, 6, 7]   // Middle and bottom rows
         ];
 
         const pattern = patterns[Math.floor(Math.random() * patterns.length)];
@@ -494,20 +562,37 @@ class RelationalIntegrationTask {
         const trial = this.phaseTrials[this.currentTrialIndex];
 
         // Apply trial persistence: 1-4 strings carry over from previous trial
+        // Modified by WM Load mode if experimental
         if (this.previousGrid !== null && this.currentTrialIndex > 0) {
-            const numCarryOver = Math.floor(Math.random() * 4) + 1; // 1 to 4
-            const indicesToCarryOver = [];
+            let numCarryOver;
 
-            // Select random positions to carry over
-            for (let i = 0; i < 9; i++) {
-                indicesToCarryOver.push(i);
+            // Determine carryover based on WM load mode
+            if (this.experimentalMode === 'wmload' || this.experimentConfig?.type === 'wmload') {
+                const loadModes = {
+                    easy: 4,
+                    medium: Math.floor(Math.random() * 4) + 1,
+                    hard: Math.random() < 0.5 ? 0 : 1,
+                    extreme: 0
+                };
+                numCarryOver = loadModes[this.wmLoadMode] || Math.floor(Math.random() * 4) + 1;
+            } else {
+                numCarryOver = Math.floor(Math.random() * 4) + 1; // 1 to 4 (original)
             }
-            this.shuffleArray(indicesToCarryOver);
 
-            // Copy strings from previous grid
-            for (let i = 0; i < numCarryOver; i++) {
-                const idx = indicesToCarryOver[i];
-                trial.grid[idx] = this.previousGrid[idx];
+            if (numCarryOver > 0) {
+                const indicesToCarryOver = [];
+
+                // Select random positions to carry over
+                for (let i = 0; i < 9; i++) {
+                    indicesToCarryOver.push(i);
+                }
+                this.shuffleArray(indicesToCarryOver);
+
+                // Copy strings from previous grid
+                for (let i = 0; i < numCarryOver; i++) {
+                    const idx = indicesToCarryOver[i];
+                    trial.grid[idx] = this.previousGrid[idx];
+                }
             }
         }
 
@@ -539,6 +624,13 @@ class RelationalIntegrationTask {
         trial.grid.forEach((str, idx) => {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
+
+            // Add colors for multi-relational mode
+            if (trial.colors && trial.colors[idx]) {
+                cell.classList.add('grid-cell-colored');
+                cell.classList.add(`color-${trial.colors[idx]}`);
+            }
+
             cell.textContent = str;
             gridContainer.appendChild(cell);
         });
@@ -657,6 +749,29 @@ class RelationalIntegrationTask {
             });
         }
 
+        // Experimental modes: handle special features
+        const mode = this.experimentalMode || this.experimentConfig?.type;
+
+        // Update n-back history
+        if (mode === 'nback') {
+            this.updateNBackHistory(trial);
+            this.adjustNBackLevel();
+        }
+
+        // Adaptive difficulty adjustments
+        if (mode === 'adaptive' && this.currentTrialIndex % 10 === 0) {
+            this.adjustAdaptiveDifficulty();
+        }
+
+        // Metacognitive mode: show confidence rating
+        if (mode === 'metacognitive') {
+            setTimeout(() => {
+                this.hideAllScreens();
+                document.getElementById('confidence-screen').classList.add('active');
+            }, 800);
+            return; // Don't proceed to next trial yet
+        }
+
         // Move to next trial after brief delay
         setTimeout(() => {
             this.currentTrialIndex++;
@@ -707,19 +822,177 @@ class RelationalIntegrationTask {
         let resultsHTML = '';
         let interpretationHTML = '';
 
-        if (this.experimentConfig.type === 'experiment1') {
+        const expType = this.experimentConfig.type;
+
+        // Update progress data for experimental modes
+        if (['adaptive', 'progressive', 'speed', 'multirelational', 'nback', 'interference', 'wmload', 'metacognitive'].includes(expType)) {
+            const sessionResults = this.calculateSessionResults();
+            this.updateProgressData(sessionResults);
+            resultsHTML = this.buildExperimentalModeResults();
+            interpretationHTML = this.buildExperimentalModeInterpretation();
+        } else if (expType === 'experiment1') {
             resultsHTML = this.buildExperiment1Results();
             interpretationHTML = this.buildExperiment1Interpretation();
-        } else if (this.experimentConfig.type === 'experiment2') {
+        } else if (expType === 'experiment2') {
             resultsHTML = this.buildExperiment2Results();
             interpretationHTML = this.buildExperiment2Interpretation();
-        } else if (this.experimentConfig.type === 'experiment3') {
+        } else if (expType === 'experiment3') {
             resultsHTML = this.buildExperiment3Results();
             interpretationHTML = this.buildExperiment3Interpretation();
         }
 
         document.getElementById('results-content').innerHTML = resultsHTML;
         document.getElementById('interpretation-content').innerHTML = interpretationHTML;
+    }
+
+    calculateSessionResults() {
+        // Calculate overall session statistics
+        let totalCorrect = 0;
+        let totalTrials = 0;
+
+        this.allResults.forEach(phaseResult => {
+            const results = phaseResult.results;
+            totalCorrect += results.hits + results.correctRejections;
+            totalTrials += results.hits + results.misses + results.falseAlarms + results.correctRejections;
+        });
+
+        const accuracy = totalTrials > 0 ? (totalCorrect / totalTrials) : 0;
+
+        return {
+            accuracy: accuracy,
+            totalTrials: totalTrials,
+            totalCorrect: totalCorrect,
+            mode: this.experimentalMode || this.experimentConfig.type
+        };
+    }
+
+    buildExperimentalModeResults() {
+        const results = this.allResults[0]?.results;
+        if (!results) return '<p>No results available.</p>';
+
+        const accuracy = this.calculateAccuracy(results);
+        const mode = this.experimentalMode || this.experimentConfig.type;
+
+        let html = `
+            <div class="stat-grid">
+                <div class="stat-item highlight">
+                    <span class="stat-label">Mode:</span>
+                    <span class="stat-value">${this.formatModeName(mode)}</span>
+                </div>
+                <div class="stat-item highlight">
+                    <span class="stat-label">Overall Accuracy:</span>
+                    <span class="stat-value">${accuracy.toFixed(3)}</span>
+                </div>
+                ${this.buildStatsForResults(results, 'Session')}
+            </div>
+        `;
+
+        // Add mode-specific stats
+        if (mode === 'adaptive') {
+            html += `
+                <div class="stat-grid" style="margin-top: 20px;">
+                    <div class="stat-item">
+                        <span class="stat-label">Final Difficulty Level:</span>
+                        <span class="stat-value">${this.adaptiveDifficulty.level}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Objects at End:</span>
+                        <span class="stat-value">${this.adaptiveDifficulty.numObjects}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Trial Duration at End:</span>
+                        <span class="stat-value">${(this.adaptiveDifficulty.trialDuration / 1000).toFixed(1)}s</span>
+                    </div>
+                </div>
+            `;
+        } else if (mode === 'metacognitive') {
+            const avgConfidence = this.confidenceData.length > 0
+                ? (this.confidenceData.reduce((sum, d) => sum + d.confidence, 0) / this.confidenceData.length).toFixed(2)
+                : 'N/A';
+            const calibration = this.calculateCalibration();
+
+            html += `
+                <div class="stat-grid" style="margin-top: 20px;">
+                    <div class="stat-item">
+                        <span class="stat-label">Average Confidence:</span>
+                        <span class="stat-value">${avgConfidence}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Calibration Score:</span>
+                        <span class="stat-value">${calibration}</span>
+                    </div>
+                </div>
+            `;
+        } else if (mode === 'nback') {
+            html += `
+                <div class="stat-grid" style="margin-top: 20px;">
+                    <div class="stat-item">
+                        <span class="stat-label">Final N-Back Level:</span>
+                        <span class="stat-value">${this.nBackLevel}-back</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        return html;
+    }
+
+    buildExperimentalModeInterpretation() {
+        const mode = this.experimentalMode || this.experimentConfig.type;
+        const interpretations = {
+            adaptive: `<p><strong>Adaptive Training:</strong> The task adjusted difficulty based on your performance. You reached level ${this.adaptiveDifficulty.level}. Continuous adaptive training keeps you at your optimal challenge level for maximum cognitive growth.</p>`,
+            progressive: `<p><strong>Progressive Complexity (Week ${this.progressiveWeek}):</strong> You completed Week ${this.progressiveWeek} of the 4-week program. Gradual difficulty progression builds robust cognitive skills over time.</p>`,
+            speed: `<p><strong>Speed-Accuracy Training (${this.speedMode} mode):</strong> Processing speed is a key component of fluid intelligence. This mode helps develop rapid pattern recognition abilities.</p>`,
+            multirelational: `<p><strong>Multi-Relational Integration:</strong> By tracking multiple dimensions simultaneously, you're training higher-order relational integration—a core component of fluid reasoning.</p>`,
+            nback: `<p><strong>Dual N-Back Hybrid:</strong> You reached ${this.nBackLevel}-back level. Combining working memory and relational integration creates a powerful cognitive workout.</p>`,
+            interference: `<p><strong>Interference Management (Level ${this.interferenceLevel}):</strong> Training with distractors strengthens selective attention and inhibitory control—crucial executive functions.</p>`,
+            wmload: `<p><strong>Working Memory Load (${this.wmLoadMode}):</strong> Varying memory load helps build working memory capacity, which is closely linked to fluid intelligence.</p>`,
+            metacognitive: `<p><strong>Meta-Cognitive Training:</strong> By monitoring your confidence and calibration, you're developing metacognitive awareness—a skill that improves learning across domains.</p>`
+        };
+
+        let interpretation = interpretations[mode] || '<p>Training completed successfully.</p>';
+
+        interpretation += `
+            <p style="margin-top: 20px;"><strong>Progress Tracking:</strong> Your progress has been saved. View your full statistics and badges in the Gamified Progress dashboard!</p>
+            <p><strong>Total Sessions Completed:</strong> ${this.progressData.sessionsCompleted}</p>
+        `;
+
+        return interpretation;
+    }
+
+    formatModeName(mode) {
+        const names = {
+            adaptive: 'Adaptive Difficulty',
+            progressive: 'Progressive Complexity',
+            speed: 'Speed-Accuracy',
+            multirelational: 'Multi-Relational',
+            nback: 'Dual N-Back Hybrid',
+            interference: 'Interference Management',
+            wmload: 'WM Load Variation',
+            metacognitive: 'Meta-Cognitive'
+        };
+        return names[mode] || mode;
+    }
+
+    calculateCalibration() {
+        if (this.confidenceData.length === 0) return 'N/A';
+
+        // Calibration: correlation between confidence and accuracy
+        const highConfCorrect = this.confidenceData.filter(d => d.confidence >= 4 && d.correct).length;
+        const highConfTotal = this.confidenceData.filter(d => d.confidence >= 4).length;
+        const lowConfCorrect = this.confidenceData.filter(d => d.confidence <= 2 && d.correct).length;
+        const lowConfTotal = this.confidenceData.filter(d => d.confidence <= 2).length;
+
+        const highConfAcc = highConfTotal > 0 ? (highConfCorrect / highConfTotal) : 0;
+        const lowConfAcc = lowConfTotal > 0 ? (lowConfCorrect / lowConfTotal) : 0;
+
+        // Good calibration = high accuracy when confident, low when not
+        const calibration = highConfAcc - lowConfAcc;
+
+        if (calibration > 0.3) return 'Excellent';
+        if (calibration > 0.1) return 'Good';
+        if (calibration > -0.1) return 'Fair';
+        return 'Needs Improvement';
     }
 
     buildExperiment1Results() {
@@ -969,6 +1242,690 @@ class RelationalIntegrationTask {
 
     restart() {
         this.showWelcome();
+    }
+
+    // ==================== EXPERIMENTAL MODES ====================
+
+    // ==================== Mode Selection & Configuration ====================
+
+    selectExperimentalMode(mode) {
+        this.experimentalMode = mode;
+        this.hideAllScreens();
+
+        // Special handling for gamified mode - go directly to dashboard
+        if (mode === 'gamified') {
+            this.showProgressDashboard();
+            return;
+        }
+
+        // Show configuration screen for other modes
+        document.getElementById('experimental-config-screen').classList.add('active');
+        this.showExperimentalConfig(mode);
+    }
+
+    showExperimentalConfig(mode) {
+        const title = document.getElementById('exp-mode-title');
+        const content = document.getElementById('exp-mode-config-content');
+
+        const configs = {
+            adaptive: {
+                title: 'Adaptive Difficulty Mode',
+                html: `
+                    <h3>How it Works</h3>
+                    <p>The task automatically adjusts difficulty based on your performance:</p>
+                    <ul>
+                        <li><strong>Start:</strong> 3 objects, 6 seconds per trial</li>
+                        <li><strong>If 80%+ accuracy:</strong> Increase objects or reduce time</li>
+                        <li><strong>If <60% accuracy:</strong> Decrease objects or add time</li>
+                        <li><strong>Maximum:</strong> 7 objects, 3 seconds</li>
+                    </ul>
+                    <p><strong>Session:</strong> 50 trials with continuous adaptation</p>
+                    <p class="config-note">This mode keeps you at your optimal challenge level for maximum learning.</p>
+                `
+            },
+            progressive: {
+                title: 'Progressive Complexity Training',
+                html: `
+                    <h3>4-Week Training Program</h3>
+                    <p>You are currently on <strong>Week ${this.progressiveWeek}</strong>:</p>
+                    <ul>
+                        <li><strong>Week 1:</strong> 3 objects, 7 seconds, clean grids (30 trials)</li>
+                        <li><strong>Week 2:</strong> Mixed 3-5 objects, 6 seconds (40 trials)</li>
+                        <li><strong>Week 3:</strong> 5 objects, 5.5 seconds, interference (50 trials)</li>
+                        <li><strong>Week 4:</strong> 7 objects, 5 seconds, high interference (60 trials)</li>
+                    </ul>
+                    <p class="config-note">Complete each week before advancing. Progress is saved automatically.</p>
+                `
+            },
+            speed: {
+                title: 'Speed-Accuracy Training',
+                html: `
+                    <h3>Select Training Mode</h3>
+                    <div class="config-option">
+                        <label for="speed-mode-select">Mode:</label>
+                        <select id="speed-mode-select">
+                            <option value="accuracy">Accuracy Priority (Unlimited time)</option>
+                            <option value="balanced" selected>Balanced (5.5 seconds - original)</option>
+                            <option value="speed">Speed Priority (3 seconds)</option>
+                            <option value="blitz">Blitz Mode (2 seconds - extreme!)</option>
+                        </select>
+                    </div>
+                    <p><strong>Session:</strong> 40 trials in selected mode</p>
+                    <p class="config-note">Processing speed is highly correlated with fluid intelligence.</p>
+                `
+            },
+            multirelational: {
+                title: 'Multi-Relational Integration',
+                html: `
+                    <h3>Dual-Dimension Pattern Detection</h3>
+                    <p>In this mode, you'll track <strong>TWO</strong> pattern types simultaneously:</p>
+                    <ul>
+                        <li><strong>Number patterns:</strong> Same as original task (last character)</li>
+                        <li><strong>Color patterns:</strong> Small colored dots on each cell</li>
+                        <li><strong>Your task:</strong> Press SPACE if EITHER pattern is present</li>
+                    </ul>
+                    <p><strong>Session:</strong> 50 trials with dual tracking</p>
+                    <p class="config-note">Higher relational complexity = better predictor of fluid intelligence.</p>
+                `
+            },
+            nback: {
+                title: 'Dual N-Back Hybrid',
+                html: `
+                    <h3>Combined Task Challenge</h3>
+                    <p>This mode combines relational integration with n-back memory:</p>
+                    <ul>
+                        <li><strong>Primary task:</strong> Detect patterns (as usual)</li>
+                        <li><strong>Secondary task:</strong> Does current grid match N trials back?</li>
+                        <li><strong>Start:</strong> 1-back (easier)</li>
+                        <li><strong>Progress:</strong> Automatic advancement to 2-back, then 3-back</li>
+                    </ul>
+                    <p><strong>Session:</strong> 60 trials with progressive n-back</p>
+                    <p class="config-note">Dual n-back training has some evidence for transfer to fluid intelligence.</p>
+                `
+            },
+            interference: {
+                title: 'Interference Management Training',
+                html: `
+                    <h3>Progressive Distractor Levels</h3>
+                    <p>You are currently on <strong>Level ${this.interferenceLevel}</strong>:</p>
+                    <ul>
+                        <li><strong>Level 1:</strong> Clean grids (baseline)</li>
+                        <li><strong>Level 2:</strong> Similar symbols as distractors</li>
+                        <li><strong>Level 3:</strong> Partial conflicting patterns</li>
+                        <li><strong>Level 4:</strong> High interference + time pressure (4 seconds)</li>
+                    </ul>
+                    <p><strong>Session:</strong> 40 trials at current level</p>
+                    <p class="config-note">Trains selective attention and inhibitory control.</p>
+                `
+            },
+            wmload: {
+                title: 'Working Memory Load Variation',
+                html: `
+                    <h3>Trial Persistence Configuration</h3>
+                    <div class="config-option">
+                        <label for="wmload-select">Working Memory Load:</label>
+                        <select id="wmload-select">
+                            <option value="easy">Easy: 4 items always carry over</option>
+                            <option value="medium" selected>Medium: 1-4 items (original study)</option>
+                            <option value="hard">Hard: 0-1 items carry over</option>
+                            <option value="extreme">Extreme: All new items every trial</option>
+                        </select>
+                    </div>
+                    <p><strong>Session:</strong> 50 trials in selected mode</p>
+                    <p class="config-note">Higher WM load requires more capacity and focus.</p>
+                `
+            },
+            metacognitive: {
+                title: 'Meta-Cognitive Training',
+                html: `
+                    <h3>Self-Monitoring Enhancement</h3>
+                    <p>This mode adds metacognitive reflection to enhance learning:</p>
+                    <ul>
+                        <li><strong>After each trial:</strong> Rate your confidence (1-5)</li>
+                        <li><strong>Calibration tracking:</strong> Compare confidence vs. accuracy</li>
+                        <li><strong>Strategy tips:</strong> Receive feedback when struggling</li>
+                        <li><strong>Self-awareness:</strong> Learn to monitor your cognitive state</li>
+                    </ul>
+                    <p><strong>Session:</strong> 40 trials with confidence ratings</p>
+                    <p class="config-note">Metacognition improves learning and problem-solving.</p>
+                `
+            }
+        };
+
+        const config = configs[mode];
+        title.textContent = config.title;
+        content.innerHTML = config.html;
+    }
+
+    startExperimentalMode() {
+        const mode = this.experimentalMode;
+
+        // Get user selections where applicable
+        if (mode === 'speed') {
+            const select = document.getElementById('speed-mode-select');
+            this.speedMode = select ? select.value : 'balanced';
+        } else if (mode === 'wmload') {
+            const select = document.getElementById('wmload-select');
+            this.wmLoadMode = select ? select.value : 'medium';
+        }
+
+        // Configure experiment based on mode
+        const modeConfigs = {
+            adaptive: () => this.configureAdaptiveMode(),
+            progressive: () => this.configureProgressiveMode(),
+            speed: () => this.configureSpeedMode(),
+            multirelational: () => this.configureMultiRelationalMode(),
+            nback: () => this.configureNBackMode(),
+            interference: () => this.configureInterferenceMode(),
+            wmload: () => this.configureWMLoadMode(),
+            metacognitive: () => this.configureMetaCognitiveMode()
+        };
+
+        if (modeConfigs[mode]) {
+            modeConfigs[mode]();
+            this.resetExperimentState();
+            this.startNextPhase();
+        }
+    }
+
+    // ==================== Mode Configurations ====================
+
+    configureAdaptiveMode() {
+        this.experimentConfig = {
+            type: 'adaptive',
+            condition: 'three-same',
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: 50 }
+            ]
+        };
+        this.adaptiveDifficulty = { numObjects: 3, trialDuration: 6000, recentAccuracy: [], level: 1 };
+    }
+
+    configureProgressiveMode() {
+        const weekConfigs = {
+            1: { numObjects: 3, duration: 7000, trials: 30, interference: false },
+            2: { numObjects: 'mixed', duration: 6000, trials: 40, interference: false },
+            3: { numObjects: 5, duration: 5500, trials: 50, interference: true },
+            4: { numObjects: 7, duration: 5000, trials: 60, interference: true }
+        };
+
+        const config = weekConfigs[this.progressiveWeek];
+        this.experimentConfig = {
+            type: 'progressive',
+            week: this.progressiveWeek,
+            condition: config.numObjects === 7 ? 'seven-same' : config.numObjects === 5 ? 'five-same' : 'three-same',
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: config.trials, ...config }
+            ]
+        };
+    }
+
+    configureSpeedMode() {
+        const durations = {
+            accuracy: 999999,
+            balanced: 5500,
+            speed: 3000,
+            blitz: 2000
+        };
+
+        this.TRIAL_DURATION = durations[this.speedMode];
+        this.experimentConfig = {
+            type: 'speed',
+            speedMode: this.speedMode,
+            condition: 'three-same',
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: 40 }
+            ]
+        };
+    }
+
+    configureMultiRelationalMode() {
+        this.experimentConfig = {
+            type: 'multirelational',
+            condition: 'three-same',
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: 50 }
+            ]
+        };
+    }
+
+    configureNBackMode() {
+        this.nBackLevel = 1;
+        this.nBackHistory = [];
+        this.experimentConfig = {
+            type: 'nback',
+            condition: 'three-same',
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: 60 }
+            ]
+        };
+    }
+
+    configureInterferenceMode() {
+        this.experimentConfig = {
+            type: 'interference',
+            condition: 'three-same',
+            interferenceLevel: this.interferenceLevel,
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: 40 }
+            ]
+        };
+    }
+
+    configureWMLoadMode() {
+        this.experimentConfig = {
+            type: 'wmload',
+            wmLoadMode: this.wmLoadMode,
+            condition: 'three-same',
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: 50 }
+            ]
+        };
+    }
+
+    configureMetaCognitiveMode() {
+        this.confidenceData = [];
+        this.experimentConfig = {
+            type: 'metacognitive',
+            condition: 'three-same',
+            phases: [
+                { phase: 'test', taskType: 'letter', trials: 40 }
+            ]
+        };
+    }
+
+    // ==================== Progress Tracking (localStorage) ====================
+
+    loadProgressData() {
+        try {
+            const data = localStorage.getItem('relationalIntegrationProgress');
+            return data ? JSON.parse(data) : this.getDefaultProgressData();
+        } catch (e) {
+            return this.getDefaultProgressData();
+        }
+    }
+
+    getDefaultProgressData() {
+        return {
+            sessionsCompleted: 0,
+            totalTrials: 0,
+            overallAccuracy: [],
+            lastSessionDate: null,
+            currentStreak: 0,
+            longestStreak: 0,
+            badges: {
+                bronze: false,
+                silver: false,
+                gold: false,
+                platinum: false,
+                diamond: false
+            },
+            progressiveWeek: 1,
+            interferenceLevel: 1,
+            adaptiveHighestLevel: 1,
+            sessionHistory: []
+        };
+    }
+
+    saveProgressData() {
+        try {
+            localStorage.setItem('relationalIntegrationProgress', JSON.stringify(this.progressData));
+        } catch (e) {
+            console.error('Failed to save progress:', e);
+        }
+    }
+
+    updateProgressData(sessionResults) {
+        const today = new Date().toDateString();
+
+        // Update session count
+        this.progressData.sessionsCompleted++;
+        this.progressData.totalTrials += sessionResults.totalTrials || 0;
+
+        // Update accuracy history
+        if (sessionResults.accuracy !== undefined) {
+            this.progressData.overallAccuracy.push(sessionResults.accuracy);
+            // Keep only last 20 sessions
+            if (this.progressData.overallAccuracy.length > 20) {
+                this.progressData.overallAccuracy.shift();
+            }
+        }
+
+        // Update streaks
+        if (this.progressData.lastSessionDate === today) {
+            // Same day, don't increment
+        } else if (this.isConsecutiveDay(this.progressData.lastSessionDate, today)) {
+            this.progressData.currentStreak++;
+        } else {
+            this.progressData.currentStreak = 1;
+        }
+
+        if (this.progressData.currentStreak > this.progressData.longestStreak) {
+            this.progressData.longestStreak = this.progressData.currentStreak;
+        }
+
+        this.progressData.lastSessionDate = today;
+
+        // Update badges
+        this.updateBadges();
+
+        // Add to history
+        this.progressData.sessionHistory.push({
+            date: new Date().toISOString(),
+            mode: this.experimentalMode || this.experimentConfig.type,
+            ...sessionResults
+        });
+
+        // Keep only last 50 sessions
+        if (this.progressData.sessionHistory.length > 50) {
+            this.progressData.sessionHistory.shift();
+        }
+
+        this.saveProgressData();
+    }
+
+    isConsecutiveDay(lastDate, today) {
+        if (!lastDate) return false;
+        const last = new Date(lastDate);
+        const current = new Date(today);
+        const diffTime = Math.abs(current - last);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays === 1;
+    }
+
+    updateBadges() {
+        const sessions = this.progressData.sessionsCompleted;
+        const avgAccuracy = this.progressData.overallAccuracy.length > 0
+            ? this.progressData.overallAccuracy.reduce((a, b) => a + b, 0) / this.progressData.overallAccuracy.length
+            : 0;
+
+        if (sessions >= 5) this.progressData.badges.bronze = true;
+        if (sessions >= 15 && avgAccuracy >= 0.5) this.progressData.badges.silver = true;
+        if (sessions >= 30 && avgAccuracy >= 0.6) this.progressData.badges.gold = true;
+        if (sessions >= 50 && avgAccuracy >= 0.7) this.progressData.badges.platinum = true;
+        if (sessions >= 100 && avgAccuracy >= 0.75) this.progressData.badges.diamond = true;
+    }
+
+    clearProgressData() {
+        if (confirm('Are you sure you want to clear ALL progress data? This cannot be undone.')) {
+            this.progressData = this.getDefaultProgressData();
+            this.saveProgressData();
+            this.showProgressDashboard();
+        }
+    }
+
+    // ==================== Progress Dashboard ====================
+
+    showProgressDashboard() {
+        this.hideAllScreens();
+        document.getElementById('progress-dashboard').classList.add('active');
+        this.renderDashboard();
+    }
+
+    renderDashboard() {
+        const data = this.progressData;
+        const avgAccuracy = data.overallAccuracy.length > 0
+            ? (data.overallAccuracy.reduce((a, b) => a + b, 0) / data.overallAccuracy.length).toFixed(3)
+            : '0.000';
+
+        // Overall stats
+        document.getElementById('overall-stats').innerHTML = `
+            <div class="stat-item highlight">
+                <span class="stat-label">Sessions Completed:</span>
+                <span class="stat-value">${data.sessionsCompleted}</span>
+            </div>
+            <div class="stat-item highlight">
+                <span class="stat-label">Total Trials:</span>
+                <span class="stat-value">${data.totalTrials}</span>
+            </div>
+            <div class="stat-item highlight">
+                <span class="stat-label">Average Accuracy:</span>
+                <span class="stat-value">${avgAccuracy}</span>
+            </div>
+        `;
+
+        // Streaks
+        document.getElementById('streaks-section').innerHTML = `
+            <div class="streak-item">
+                <span class="streak-label">🔥 Current Streak</span>
+                <span class="streak-value">${data.currentStreak} days</span>
+            </div>
+            <div class="streak-item">
+                <span class="streak-label">⭐ Longest Streak</span>
+                <span class="streak-value">${data.longestStreak} days</span>
+            </div>
+        `;
+
+        // Badges
+        const badges = [
+            { key: 'bronze', name: 'Bronze', icon: '🥉', desc: '5 sessions' },
+            { key: 'silver', name: 'Silver', icon: '🥈', desc: '15 sessions, 50% avg' },
+            { key: 'gold', name: 'Gold', icon: '🥇', desc: '30 sessions, 60% avg' },
+            { key: 'platinum', name: 'Platinum', icon: '💎', desc: '50 sessions, 70% avg' },
+            { key: 'diamond', name: 'Diamond', icon: '💠', desc: '100 sessions, 75% avg' }
+        ];
+
+        document.getElementById('badges-section').innerHTML = `
+            <div class="badge-container">
+                ${badges.map(b => `
+                    <div class="badge-item ${data.badges[b.key] ? 'earned' : ''}">
+                        <div class="badge-icon">${b.icon}</div>
+                        <div class="badge-name">${b.name}</div>
+                        <div class="badge-description">${b.desc}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Performance chart
+        if (data.overallAccuracy.length > 0) {
+            const chartHTML = data.overallAccuracy.slice(-10).map((acc, i) => {
+                const width = Math.max(0, Math.min(100, acc * 100));
+                return `
+                    <div class="chart-bar">
+                        <div class="chart-label">Session ${data.sessionsCompleted - data.overallAccuracy.length + i + 1}</div>
+                        <div class="chart-bar-fill" style="width: ${width}%">${acc.toFixed(2)}</div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('performance-chart').innerHTML = `
+                <div class="performance-chart">
+                    <h4>Last 10 Sessions</h4>
+                    ${chartHTML}
+                </div>
+            `;
+        } else {
+            document.getElementById('performance-chart').innerHTML = '<p style="text-align:center; color:#718096;">No session data yet. Complete a training session to see your progress!</p>';
+        }
+    }
+
+    continueTrainingFromDashboard() {
+        this.showWelcome();
+    }
+
+    // ==================== Modified Trial Generation for Experimental Modes ====================
+
+    generateTrialExperimental(symbols, condition, hasRelation, highInterference = false) {
+        const mode = this.experimentalMode || this.experimentConfig.type;
+
+        let trial = this.generateTrial(symbols, condition, hasRelation, highInterference);
+
+        // Adaptive mode: may use 7 objects
+        if (mode === 'adaptive' && this.adaptiveDifficulty.numObjects === 7) {
+            condition = 'seven-same';
+            trial = this.generateTrial(symbols, condition, hasRelation, highInterference);
+        }
+
+        // Multi-relational: add colors
+        if (mode === 'multirelational') {
+            trial.colors = Array(9).fill(null).map(() =>
+                this.colors[Math.floor(Math.random() * this.colors.length)]
+            );
+            // Maybe also insert color pattern
+            if (Math.random() < 0.5 && hasRelation) {
+                this.insertColorPattern(trial.colors);
+            }
+        }
+
+        // Interference mode: add interference based on level
+        if (mode === 'interference') {
+            this.addInterferenceByLevel(trial, symbols, this.interferenceLevel);
+        }
+
+        return trial;
+    }
+
+    insertColorPattern(colors) {
+        const patterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8]
+        ];
+        const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+        const color = this.colors[Math.floor(Math.random() * this.colors.length)];
+        pattern.forEach(idx => {
+            colors[idx] = color;
+        });
+    }
+
+    addInterferenceByLevel(trial, symbols, level) {
+        if (level === 1) return; // Clean
+
+        if (level >= 2) {
+            // Add similar symbols
+            const similarSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+            for (let i = 0; i < 3; i++) {
+                const idx = Math.floor(Math.random() * 9);
+                const prefix = trial.grid[idx].substring(0, 2);
+                trial.grid[idx] = prefix + similarSymbol;
+            }
+        }
+
+        if (level >= 3) {
+            // Add partial conflicting patterns
+            this.addHighInterference(trial.grid, symbols, trial.condition);
+        }
+
+        if (level === 4) {
+            // Time pressure handled by reducing TRIAL_DURATION
+            this.TRIAL_DURATION = 4000;
+        }
+    }
+
+    // ==================== Confidence & Meta-Cognitive ====================
+
+    recordConfidence(confidence) {
+        this.currentConfidence = confidence;
+        const trial = this.phaseTrials[this.currentTrialIndex - 1]; // Previous trial
+        const wasCorrect = this.currentPhaseResults.trialData[this.currentPhaseResults.trialData.length - 1].correct;
+
+        this.confidenceData.push({
+            trial: this.currentTrialIndex,
+            confidence: confidence,
+            correct: wasCorrect
+        });
+
+        // Show strategy tip if struggling
+        this.showStrategyTip(confidence, wasCorrect);
+
+        // Continue to next trial after brief delay
+        setTimeout(() => {
+            this.hideAllScreens();
+            document.getElementById('task-screen').classList.add('active');
+            this.showNextTrial();
+        }, 1500);
+    }
+
+    showStrategyTip(confidence, wasCorrect) {
+        const tipElement = document.getElementById('strategy-tip');
+        let tip = '';
+
+        if (!wasCorrect && confidence >= 4) {
+            tip = '💡 <strong>Tip:</strong> You were very confident but incorrect. Try double-checking your answer before responding.';
+        } else if (wasCorrect && confidence <= 2) {
+            tip = '✨ <strong>Good job!</strong> You got it right despite low confidence. Trust your instincts more!';
+        } else if (!wasCorrect && confidence <= 2) {
+            tip = '🎯 <strong>Strategy:</strong> Focus on the LAST character of each string. Scan row by row, then column by column systematically.';
+        } else if (wasCorrect && confidence >= 4) {
+            tip = '🌟 <strong>Excellent!</strong> High confidence and correct answer. You\'re calibrated well!';
+        }
+
+        tipElement.innerHTML = tip;
+    }
+
+    // ==================== Adaptive Difficulty ====================
+
+    adjustAdaptiveDifficulty() {
+        const recentTrials = 10;
+        const recentData = this.currentPhaseResults.trialData.slice(-recentTrials);
+
+        if (recentData.length < recentTrials) return;
+
+        const recentAccuracy = recentData.filter(t => t.correct).length / recentData.length;
+        this.adaptiveDifficulty.recentAccuracy.push(recentAccuracy);
+
+        if (recentAccuracy >= 0.8) {
+            // Too easy, increase difficulty
+            if (this.adaptiveDifficulty.trialDuration > 3000) {
+                this.adaptiveDifficulty.trialDuration -= 500;
+            } else if (this.adaptiveDifficulty.numObjects < 7) {
+                this.adaptiveDifficulty.numObjects += 2;
+                this.adaptiveDifficulty.trialDuration = 6000; // Reset duration
+            }
+            this.adaptiveDifficulty.level++;
+        } else if (recentAccuracy < 0.6) {
+            // Too hard, decrease difficulty
+            if (this.adaptiveDifficulty.numObjects > 3) {
+                this.adaptiveDifficulty.numObjects -= 2;
+            } else if (this.adaptiveDifficulty.trialDuration < 8000) {
+                this.adaptiveDifficulty.trialDuration += 500;
+            }
+            this.adaptiveDifficulty.level = Math.max(1, this.adaptiveDifficulty.level - 1);
+        }
+
+        this.TRIAL_DURATION = this.adaptiveDifficulty.trialDuration;
+
+        // Update highest level
+        if (this.adaptiveDifficulty.level > this.progressData.adaptiveHighestLevel) {
+            this.progressData.adaptiveHighestLevel = this.adaptiveDifficulty.level;
+            this.saveProgressData();
+        }
+    }
+
+    // ==================== N-Back ====================
+
+    updateNBackHistory(trial) {
+        this.nBackHistory.push({
+            grid: [...trial.grid],
+            hasRelation: trial.hasRelation
+        });
+
+        // Keep only what we need
+        if (this.nBackHistory.length > this.nBackLevel + 1) {
+            this.nBackHistory.shift();
+        }
+    }
+
+    checkNBackMatch() {
+        if (this.nBackHistory.length <= this.nBackLevel) return false;
+
+        const current = this.nBackHistory[this.nBackHistory.length - 1];
+        const nBack = this.nBackHistory[this.nBackHistory.length - 1 - this.nBackLevel];
+
+        // Simple match: check if hasRelation is same
+        return current.hasRelation === nBack.hasRelation;
+    }
+
+    adjustNBackLevel() {
+        // Every 20 trials, check if we should advance
+        if (this.currentTrialIndex % 20 === 0 && this.nBackLevel < 3) {
+            const recentData = this.currentPhaseResults.trialData.slice(-20);
+            const accuracy = recentData.filter(t => t.correct).length / recentData.length;
+
+            if (accuracy >= 0.75) {
+                this.nBackLevel++;
+                this.showFeedback(`🎉 Advancing to ${this.nBackLevel}-back!`, 'correct');
+            }
+        }
     }
 }
 
