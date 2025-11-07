@@ -3,80 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relational Integration Trainer</title>
+    <title>Relational Integration Task - Exact Replication</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="screen active">
-            <h1>Relational Integration Trainer</h1>
+            <h1>Relational Integration Task</h1>
             <div class="info-box">
-                <h2>About This Task</h2>
-                <p>This trainer is based on the research by Chuderski (2013) on relational integration and fluid reasoning.</p>
-                <p><strong>What is Relational Integration?</strong></p>
-                <p>Relational integration is the ability to bind mental representations into complex relational structures. This task measures how well you can detect patterns by integrating multiple pieces of information simultaneously.</p>
-                <p><strong>Task Overview:</strong></p>
+                <h2>Exact Replication of Chuderski (2013)</h2>
+                <p>This is a faithful implementation of the relational integration task from:</p>
+                <p class="citation"><em>Chuderski, A. (2013). The relational integration task explains fluid reasoning above and beyond other working memory tasks. Memory & Cognition, 42(3), 448-463.</em></p>
+
+                <h3>What is Relational Integration?</h3>
+                <p>Relational integration is the ability to bind mental representations into complex relational structures. This task measures your capacity to construct and integrate temporary bindings between pieces of information.</p>
+
+                <h3>How It Works:</h3>
                 <ul>
-                    <li>You will see a 3×3 grid of three-character strings (letters or numbers)</li>
-                    <li>Your task is to detect specific patterns based on the rules you select</li>
-                    <li>Each trial displays for 5.5 seconds</li>
+                    <li>You'll see a 3×3 grid of three-character strings</li>
+                    <li>Each trial displays for exactly 5.5 seconds</li>
                     <li>Press SPACE when you detect the target pattern</li>
                     <li>Do NOT respond if the pattern is absent</li>
+                    <li>Focus on the <strong>last character</strong> of each string</li>
                 </ul>
             </div>
 
             <div class="config-section">
-                <h2>Configuration</h2>
+                <h2>Select Experiment to Replicate</h2>
 
-                <div class="config-option">
-                    <label for="task-type">Task Type:</label>
-                    <select id="task-type">
-                        <option value="letter">Letters (Consonants)</option>
-                        <option value="number">Numbers (Digits)</option>
-                    </select>
-                </div>
+                <div class="experiment-selector">
+                    <div class="experiment-card" data-experiment="1">
+                        <h3>Experiment 1</h3>
+                        <p class="exp-subtitle">Between-Subjects Design</p>
+                        <ul class="exp-details">
+                            <li><strong>Conditions:</strong> Choose ONE condition</li>
+                            <li><strong>Trials:</strong> 5 training (letters) + 50 letters + 50 numbers</li>
+                            <li><strong>Duration:</strong> ~10 minutes</li>
+                            <li><strong>Purpose:</strong> Test if bindings (not objects) determine difficulty</li>
+                        </ul>
+                        <button class="select-exp-btn" data-experiment="1">Select Experiment 1</button>
+                    </div>
 
-                <div class="config-option">
-                    <label for="condition">Condition:</label>
-                    <select id="condition">
-                        <option value="three-same">Three Same (2 bindings) - Easier</option>
-                        <option value="five-same">Five Same (2 bindings) - Easier</option>
-                        <option value="three-different">Three Different (3 bindings) - Harder</option>
-                        <option value="five-different">Five Different (5-10 bindings) - Hardest</option>
-                    </select>
-                </div>
+                    <div class="experiment-card" data-experiment="2">
+                        <h3>Experiment 2</h3>
+                        <p class="exp-subtitle">Within-Subjects + Interference</p>
+                        <ul class="exp-details">
+                            <li><strong>Conditions:</strong> Three-Same AND Five-Same</li>
+                            <li><strong>Trials:</strong> 10 training + 120 trials per condition (60 letters + 60 numbers)</li>
+                            <li><strong>Interference:</strong> Low vs. High (50% each)</li>
+                            <li><strong>Duration:</strong> ~25 minutes</li>
+                            <li><strong>Purpose:</strong> Test interference effects</li>
+                        </ul>
+                        <button class="select-exp-btn" data-experiment="2">Select Experiment 2</button>
+                    </div>
 
-                <div class="config-option">
-                    <label for="num-trials">Number of Test Trials:</label>
-                    <select id="num-trials">
-                        <option value="20">20 (Quick)</option>
-                        <option value="40" selected>40 (Standard)</option>
-                        <option value="60">60 (Extended)</option>
-                    </select>
-                </div>
-
-                <div class="config-option">
-                    <label for="training-trials">Training Trials:</label>
-                    <select id="training-trials">
-                        <option value="5" selected>5</option>
-                        <option value="10">10</option>
-                    </select>
+                    <div class="experiment-card" data-experiment="3">
+                        <h3>Experiment 3</h3>
+                        <p class="exp-subtitle">Multiple Conditions Within-Subjects</p>
+                        <ul class="exp-details">
+                            <li><strong>Conditions:</strong> Three-Same, Five-Same, Three-Different</li>
+                            <li><strong>Trials:</strong> 80 trials per condition (40 numbers + 40 letters)</li>
+                            <li><strong>Order:</strong> Three-Same first, others randomized</li>
+                            <li><strong>Duration:</strong> ~25 minutes</li>
+                            <li><strong>Purpose:</strong> Compare predictive power of conditions</li>
+                        </ul>
+                        <button class="select-exp-btn" data-experiment="3">Select Experiment 3</button>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <button id="start-btn" class="btn-primary">Start Training</button>
+        <!-- Experiment 1 Configuration -->
+        <div id="exp1-config-screen" class="screen">
+            <h1>Experiment 1 Configuration</h1>
+            <div class="info-box">
+                <p>In Experiment 1, participants were randomly assigned to ONE condition. The goal was to test whether the number of bindings (not the number of objects) determines task difficulty.</p>
+            </div>
+
+            <div class="config-section">
+                <h2>Select Your Condition</h2>
+                <div class="config-option">
+                    <label for="exp1-condition">Condition (Between-Subjects):</label>
+                    <select id="exp1-condition">
+                        <option value="three-same">Three-Same (Find 3 SAME endings in row/column)</option>
+                        <option value="five-same">Five-Same (Find 5 SAME endings in cross/T pattern)</option>
+                        <option value="three-different">Three-Different (Find 3 DIFFERENT endings in row/column)</option>
+                        <option value="five-different">Five-Different (Find 5 DIFFERENT endings in cross/T pattern)</option>
+                    </select>
+                </div>
+                <p class="config-note"><strong>Protocol:</strong> 5 training trials (letters only) → 50 letter trials → 50 number trials</p>
+            </div>
+
+            <div class="button-group">
+                <button id="exp1-back-btn" class="btn-secondary">Back</button>
+                <button id="exp1-start-btn" class="btn-primary">Start Experiment 1</button>
+            </div>
+        </div>
+
+        <!-- Experiment 2 Configuration -->
+        <div id="exp2-config-screen" class="screen">
+            <h1>Experiment 2 Configuration</h1>
+            <div class="info-box">
+                <p>Experiment 2 tests both Three-Same and Five-Same conditions within the same session, with manipulation of interference levels. This replicates the within-subjects design.</p>
+            </div>
+
+            <div class="config-section">
+                <h2>Configuration</h2>
+                <p class="config-note"><strong>Fixed Conditions:</strong> Three-Same AND Five-Same (order randomized)</p>
+                <p class="config-note"><strong>Protocol per condition:</strong> 10 training trials (numbers) → 60 number trials → 60 letter trials</p>
+                <p class="config-note"><strong>Interference:</strong> 50% low-interference trials, 50% high-interference trials (randomized)</p>
+                <p class="config-note"><strong>Total Duration:</strong> ~25 minutes</p>
+            </div>
+
+            <div class="button-group">
+                <button id="exp2-back-btn" class="btn-secondary">Back</button>
+                <button id="exp2-start-btn" class="btn-primary">Start Experiment 2</button>
+            </div>
+        </div>
+
+        <!-- Experiment 3 Configuration -->
+        <div id="exp3-config-screen" class="screen">
+            <h1>Experiment 3 Configuration</h1>
+            <div class="info-box">
+                <p>Experiment 3 compares Three-Same, Five-Same, and Three-Different conditions to evaluate their predictive power for fluid reasoning. Note: Five-Different was excluded due to floor effects in pilot testing.</p>
+            </div>
+
+            <div class="config-section">
+                <h2>Configuration</h2>
+                <p class="config-note"><strong>Fixed Conditions:</strong> Three-Same (first), then Five-Same and Three-Different (randomized order)</p>
+                <p class="config-note"><strong>Protocol per condition:</strong> 40 number trials → 40 letter trials (numbers always first)</p>
+                <p class="config-note"><strong>Total Duration:</strong> ~25 minutes</p>
+            </div>
+
+            <div class="button-group">
+                <button id="exp3-back-btn" class="btn-secondary">Back</button>
+                <button id="exp3-start-btn" class="btn-primary">Start Experiment 3</button>
+            </div>
         </div>
 
         <!-- Instructions Screen -->
         <div id="instructions-screen" class="screen">
             <h1>Instructions</h1>
             <div id="instruction-content" class="info-box">
-                <!-- Dynamically filled based on condition -->
+                <!-- Dynamically filled based on experiment and condition -->
             </div>
             <div class="button-group">
-                <button id="back-to-config-btn" class="btn-secondary">Back</button>
-                <button id="begin-task-btn" class="btn-primary">Begin Task</button>
+                <button id="skip-instructions-btn" class="btn-secondary">Skip</button>
+                <button id="begin-task-btn" class="btn-primary">Begin</button>
             </div>
         </div>
 
@@ -84,7 +158,14 @@
         <div id="task-screen" class="screen">
             <div class="task-header">
                 <div class="trial-counter">
-                    <span id="trial-type">Training</span> Trial: <span id="current-trial">0</span> / <span id="total-trials">5</span>
+                    <div class="trial-info">
+                        <span id="phase-indicator">Training</span> |
+                        <span id="task-type-indicator">Letters</span> |
+                        <span id="condition-indicator">Three-Same</span>
+                    </div>
+                    <div class="trial-progress">
+                        Trial: <span id="current-trial">0</span> / <span id="total-trials">5</span>
+                    </div>
                 </div>
                 <div class="timer-container">
                     <div class="timer-bar" id="timer-bar"></div>
@@ -107,53 +188,22 @@
             <div class="results-container">
                 <div class="results-summary">
                     <h2>Performance Summary</h2>
-                    <div class="stat-grid">
-                        <div class="stat-item">
-                            <span class="stat-label">Condition:</span>
-                            <span class="stat-value" id="result-condition"></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Task Type:</span>
-                            <span class="stat-value" id="result-type"></span>
-                        </div>
-                        <div class="stat-item highlight">
-                            <span class="stat-label">Overall Accuracy:</span>
-                            <span class="stat-value" id="result-accuracy"></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Hit Rate:</span>
-                            <span class="stat-value" id="result-hits"></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">False Alarm Rate:</span>
-                            <span class="stat-value" id="result-fa"></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Correct Rejections:</span>
-                            <span class="stat-value" id="result-cr"></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Misses:</span>
-                            <span class="stat-value" id="result-misses"></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Mean RT (Hits):</span>
-                            <span class="stat-value" id="result-rt"></span>
-                        </div>
+                    <div id="results-content">
+                        <!-- Dynamically filled based on experiment -->
                     </div>
                 </div>
 
                 <div class="results-interpretation">
                     <h3>Interpretation</h3>
-                    <p id="interpretation-text"></p>
+                    <div id="interpretation-content"></div>
                     <div class="reference-box">
-                        <p><strong>Reference:</strong> Chuderski, A. (2013). The relational integration task explains fluid reasoning above and beyond other working memory tasks. Memory & Cognition, 42(3), 448-463.</p>
+                        <p><strong>Reference:</strong> Chuderski, A. (2013). The relational integration task explains fluid reasoning above and beyond other working memory tasks. <em>Memory & Cognition, 42</em>(3), 448-463. doi: 10.3758/s13421-013-0366-x</p>
                     </div>
                 </div>
 
                 <div class="button-group">
-                    <button id="download-results-btn" class="btn-secondary">Download Results</button>
-                    <button id="restart-btn" class="btn-primary">Try Again</button>
+                    <button id="download-results-btn" class="btn-secondary">Download Data (JSON)</button>
+                    <button id="restart-btn" class="btn-primary">Return to Start</button>
                 </div>
             </div>
         </div>

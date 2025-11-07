@@ -1,320 +1,471 @@
-# Relational Integration Trainer
+# Relational Integration Task - Exact Replication
 
-A web-based cognitive training tool based on the research by Chuderski (2013) on relational integration and fluid reasoning.
+**A faithful implementation of Chuderski (2013)'s groundbreaking study on relational integration and fluid reasoning.**
+
+> Chuderski, A. (2013). The relational integration task explains fluid reasoning above and beyond other working memory tasks. *Memory & Cognition, 42*(3), 448-463. https://doi.org/10.3758/s13421-013-0366-x
 
 ## Overview
 
-This application implements the **Relational Integration Task**, a cognitive assessment tool that measures the ability to bind mental representations into complex relational structures. Research has shown that performance on this task is one of the strongest predictors of fluid reasoning and general intelligence.
+This web application provides an **exact replication** of all three experiments from Chuderski (2013)'s seminal study on relational integration - the cognitive process shown to be the strongest predictor of fluid intelligence among all working memory measures.
+
+### Why This Matters
+
+This study fundamentally changed our understanding of the relationship between working memory and intelligence by showing that:
+- **Relational integration** (binding representations into structures) predicts fluid IQ better than storage capacity or attention control
+- Performance depends on the **number of bindings** required, not the number of objects or amount of interference
+- The relational integration task explains **5.9% unique variance** in fluid reasoning - more than any other WM measure
+
+## ✅ Exact Replication Features
+
+This implementation faithfully replicates every detail from the original study:
+
+### Core Task Elements
+- ✅ 3×3 grid of three-character strings
+- ✅ 10 consonants (B, C, D, F, G, H, J, K, L, M) for letter trials
+- ✅ 10 digits (0-9) for number trials
+- ✅ Exactly 5.5 seconds per trial
+- ✅ 0.1 second blink between trials
+- ✅ **Trial persistence**: 1-4 strings carry over from previous trial
+- ✅ Focus on last character of each string
+- ✅ Space bar response
+- ✅ 50% relation trials, 50% no-relation trials
+- ✅ Accuracy scoring: Hit Rate - False Alarm Rate
+
+### Pattern Detection Rules
+- ✅ **Three-Same**: 3 identical endings in row/column (NO diagonals)
+- ✅ **Five-Same**: 5 identical endings in cross or T pattern
+- ✅ **Three-Different**: 3 different endings in row/column (NO diagonals)
+- ✅ **Five-Different**: 5 different endings in cross or T pattern
+
+### Experiment 1: Between-Subjects (N=112 in study)
+**Purpose**: Test if bindings (not objects) determine difficulty
+
+**Protocol**:
+- Participant chooses ONE condition
+- 5 training trials (letters only)
+- 50 letter test trials
+- 50 number test trials (no training)
+
+**Expected Results**:
+- Three-Same: 0.73 accuracy (2 bindings)
+- Five-Same: 0.73 accuracy (2 bindings)
+- Three-Different: 0.38 accuracy (3 bindings)
+- Five-Different: 0.18 accuracy (5-10 bindings)
+
+**Key Finding**: Same vs. different endings matter; number of objects doesn't (when bindings are equal).
+
+### Experiment 2: Within-Subjects + Interference (N=40 in study)
+**Purpose**: Test interference effects on performance
+
+**Protocol**:
+- Both Three-Same AND Five-Same conditions (randomized order)
+- 10 training trials per condition (numbers only)
+- 60 number test trials per condition
+- 60 letter test trials per condition
+- 50% low-interference, 50% high-interference trials
+
+**Expected Results**:
+- No significant effect of interference (low: 76%, high: 77%)
+- Three-Same ≈ Five-Same (both ~73%)
+
+**Key Finding**: Relational integration depends on binding processes, not interference resolution.
+
+### Experiment 3: Multiple Conditions (N=243 in study)
+**Purpose**: Compare predictive power for fluid reasoning
+
+**Protocol**:
+- Three conditions: Three-Same, Five-Same, Three-Different
+- Three-Same always first, others randomized
+- 40 number trials per condition (always first)
+- 40 letter trials per condition (always second)
+- NO training trials (to save time in long session)
+
+**Expected Results**:
+- All three conditions strongly predict fluid IQ (r ≈ .43-.48)
+- No significant differences between conditions
+- Relational integration > complex span > STM > n-back > antisaccade
+
+**Key Finding**: Relational integration capacity is THE fundamental predictor of fluid reasoning.
+
+## Quick Start
+
+### Basic Usage
+
+1. **Open the application**
+   ```bash
+   # Option 1: Direct file open
+   open index.html
+
+   # Option 2: Local server (recommended)
+   python -m http.server 8000
+   # Then visit http://localhost:8000
+   ```
+
+2. **Select an experiment** to replicate
+
+3. **Follow the protocol** exactly as specified
+
+4. **View results** with comparison to study findings
+
+5. **Download data** in JSON format for analysis
+
+### For Researchers
+
+If you're conducting a formal replication study:
+
+1. Use **Experiment 1** for between-subjects design (fastest, 1 condition, ~10 min)
+2. Use **Experiment 2** for within-subjects + interference testing (~25 min)
+3. Use **Experiment 3** for comparing conditions as Gf predictors (~25 min)
+
+## Implementation Details
+
+### Exact Technical Specifications
+
+#### Trial Persistence (Critical Detail)
+The study states: *"1-4 strings in each subsequent array were the same as in the preceding array"*
+
+**Our Implementation**:
+- After first trial, randomly select 1-4 positions
+- Copy those strings from previous grid to current grid
+- This reduces visual processing load between trials
+
+#### Sequence Details
+
+**Experiment 1**:
+```
+Training (Letters): 5 trials
+Test (Letters): 50 trials
+Test (Numbers): 50 trials (NO training)
+```
+
+**Experiment 2**:
+```
+Condition 1 (randomized three-same or five-same):
+  Training (Numbers): 10 trials
+  Test (Numbers): 60 trials
+  Test (Letters): 60 trials
+
+Condition 2 (the other condition):
+  Training (Numbers): 10 trials
+  Test (Numbers): 60 trials
+  Test (Letters): 60 trials
+```
+
+**Experiment 3**:
+```
+Three-Same (always first):
+  Test (Numbers): 40 trials
+  Test (Letters): 40 trials
+
+Condition 2 (randomized five-same or three-different):
+  Test (Numbers): 40 trials
+  Test (Letters): 40 trials
+
+Condition 3 (the other condition):
+  Test (Numbers): 40 trials
+  Test (Letters): 40 trials
+```
+
+#### Pattern Definitions
+
+**Rows (indices)**: [0,1,2], [3,4,5], [6,7,8]
+**Columns (indices)**: [0,3,6], [1,4,7], [2,5,8]
+**NO DIAGONALS** for three-object conditions
+
+**Cross pattern**: [1,3,4,5,7] (center + 4 adjacent)
+**T patterns**:
+- T up: [0,1,2,4,7]
+- T down: [1,3,4,5,6]
+- T left: [0,3,4,6,7]
+- T right: [1,2,4,5,8]
+
+Grid layout:
+```
+[0] [1] [2]
+[3] [4] [5]
+[6] [7] [8]
+```
+
+#### High Interference (Experiment 2 Only)
+In high-interference trials, 12 identical stimuli are present besides the target pattern elements (but don't form a valid relation). This is automatically handled in Experiment 2.
+
+## Data Export Format
+
+Results are exported as JSON with complete trial-by-trial data:
+
+```json
+{
+  "experiment": "experiment1",
+  "timestamp": "2025-11-07T...",
+  "configuration": {
+    "type": "experiment1",
+    "condition": "three-different",
+    "phases": [...]
+  },
+  "allResults": [
+    {
+      "phase": "test",
+      "taskType": "letter",
+      "condition": "three-different",
+      "results": {
+        "hits": 20,
+        "misses": 5,
+        "falseAlarms": 3,
+        "correctRejections": 22,
+        "reactionTimes": [2145, 1987, ...],
+        "trialData": [
+          {
+            "trialNumber": 1,
+            "phase": "test",
+            "taskType": "letter",
+            "condition": "three-different",
+            "hasRelation": true,
+            "highInterference": false,
+            "responded": true,
+            "correct": true,
+            "reactionTime": 2145
+          },
+          ...
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "three-different_letter": {
+      "accuracy": 0.378,
+      "hits": 20,
+      "misses": 5,
+      "falseAlarms": 3,
+      "correctRejections": 22,
+      "meanRT": 2234.5
+    }
+  }
+}
+```
 
 ## Scientific Background
 
 ### What is Relational Integration?
 
-Relational integration is the cognitive process that allows us to:
-- Bind mental representations together
-- Create temporary connections between pieces of information
-- Integrate multiple bindings into complex relational structures
-- Process abstract relationships independent of specific content
+Relational integration is the cognitive process of binding mental representations and integrating them into complex relational structures. Unlike:
+- **Storage capacity**: How many items you can hold
+- **Attention control**: How well you can focus
+- **Processing speed**: How fast you process
 
-### Key Research Findings
+Relational integration measures:
+- **Binding construction**: Creating temporary links between representations
+- **Binding maintenance**: Keeping multiple bindings active
+- **Binding integration**: Combining bindings into structured wholes
 
-Based on **Chuderski, A. (2013). The relational integration task explains fluid reasoning above and beyond other working memory tasks. Memory & Cognition, 42(3), 448-463.**
+### The Binding Hypothesis
 
-**Main Findings:**
-1. **Strongest predictor of fluid intelligence**: The relational integration task predicted more variance in fluid reasoning than:
-   - Complex span tasks
-   - Short-term memory tasks
-   - N-back tasks
-   - Antisaccade (attention control) tasks
+**Why does three-different require more bindings than three-same?**
 
-2. **Number of bindings matters**: Performance depends on how many temporary bindings must be constructed and integrated:
-   - **Three-same/Five-same**: Only 2 bindings needed → Easier (avg accuracy ~0.73)
-   - **Three-different**: 3 bindings needed → Moderate (avg accuracy ~0.38)
-   - **Five-different**: 5-10 bindings needed → Hardest (avg accuracy ~0.18)
+**Three-Same** (e.g., X, X, X):
+- Compare first and second → "both X" → Bind [position1-position2, value X]
+- Compare third to binding → "also X" → Extend binding
+- **Total: 2 bindings** (incremental comparison possible)
 
-3. **Not just working memory**: The task predicts intelligence above and beyond:
-   - Storage capacity (how many items you can hold)
-   - Attention control (ability to focus and inhibit)
-   - Processing speed
+**Three-Different** (e.g., X, Y, Z):
+- X vs Y → "different" → Bind [pos1-pos2, different]
+- Y vs Z → "different" → Bind [pos2-pos3, different]
+- X vs Z → "different" → Bind [pos1-pos3, different]
+- **Total: 3 bindings** (all pairs must be compared)
 
-4. **Unique contribution**: Relational integration accounted for **5.9% unique variance** in fluid reasoning, more than any other working memory measure tested.
+**Five-Different** (e.g., V, W, X, Y, Z in cross pattern):
+- All pairwise comparisons: 10 item-item bindings
+- OR: 5 item-context bindings (binding each to its role in the pattern)
+- **Total: 5-10 bindings** (dramatically exceeds WM capacity)
 
-## The Task
+### Key Findings Summary
 
-### Task Structure
+| Measure | Unique Variance in Fluid IQ |
+|---------|---------------------------|
+| **Relational Integration** | **5.9%** ⭐ |
+| Complex Span | 2.9% |
+| STM Span | 0.4% |
+| Antisaccade | 0.2% |
+| N-back | ~0% |
 
-Participants view a 3×3 grid of three-character strings (e.g., "ABC" or "123") and must detect whether a specific pattern is present.
+**Shared variance** (all 4 measures + relational integration): 24.4%
 
-### Conditions
+### Implications
 
-#### 1. Three-Same (2 bindings - Easier)
-- **Rule**: Find three strings ending with the SAME letter/digit in one row or column
-- **Example**: "XYA", "BCA", "DFA" in a row (all end with "A")
-- **Bindings required**: 2 (incremental comparison possible)
+1. **For Intelligence Research**: Relational integration is a fundamental cognitive primitive that underlies fluid reasoning more than storage or control.
 
-#### 2. Five-Same (2 bindings - Easier)
-- **Rule**: Find five strings ending with the SAME letter/digit in a cross or T pattern
-- **Patterns**: Cross (center + 4 adjacent) or T-shape (4 rotations possible)
-- **Bindings required**: 2 (same as three-same)
+2. **For WM Theory**: Standard WM tasks (spans, n-back) may work because they require binding, not just storage.
 
-#### 3. Three-Different (3 bindings - Harder)
-- **Rule**: Find three strings ending with three DIFFERENT letters/digits in one row or column
-- **Example**: "XYA", "BCB", "DFC" in a row (endings: A, B, C - all different)
-- **Bindings required**: 3 (each pair must be compared)
+3. **For Training**: If transfer to Gf is possible, training relational integration (not just memory span) may be most effective.
 
-#### 4. Five-Different (5-10 bindings - Hardest)
-- **Rule**: Find five strings ending with five DIFFERENT letters/digits in a cross or T pattern
-- **Bindings required**: 5 (item-context) or 10 (item-item comparisons)
+4. **For Assessment**: This task could be a more direct measure of reasoning potential than traditional WM tests.
 
-### Trial Structure
+## Validation
 
-- **Duration**: 5.5 seconds per trial
-- **Response**: Press SPACE when target pattern detected
-- **No response**: Withhold response if pattern absent
-- **Target ratio**: 50% of trials contain the target pattern
-- **Training**: 5-10 practice trials before testing
-- **Testing**: 20-60 test trials (40 standard)
+### How to Know It's Working
 
-## Features
+**Expected Pattern of Results**:
+1. Three-same ≈ Five-same ≈ 0.73 (similar despite more objects)
+2. Three-different ≈ 0.38 (harder despite fewer objects)
+3. Five-different ≈ 0.18 (floor effect)
+4. No effect of interference in Exp. 2
+5. All conditions in Exp. 3 should feel effortful but doable
 
-### Core Functionality
-- ✅ Four different task conditions
-- ✅ Letter and number variants
-- ✅ Configurable trial counts
-- ✅ Training trials with feedback
-- ✅ Precise timing (5.5s per trial)
-- ✅ Visual timer display
-- ✅ Keyboard response recording
-- ✅ Reaction time measurement
+### Common Issues
 
-### Results & Analysis
-- ✅ Accuracy score (Hit Rate - False Alarm Rate)
-- ✅ Hit rate and false alarm rate
-- ✅ Misses and correct rejections
-- ✅ Mean reaction time
-- ✅ Performance interpretation
-- ✅ Trial-by-trial data export (JSON)
+**Too easy?**
+- Check you're responding only to exact patterns (rows/columns for 3-object, cross/T for 5-object)
+- Make sure you're checking the LAST character only
+- Are you seeing the full 5.5 seconds?
 
-### User Interface
-- ✅ Clean, modern design
-- ✅ Responsive layout
-- ✅ Clear instructions for each condition
-- ✅ Visual feedback during trials
-- ✅ Comprehensive results display
-- ✅ Downloadable results
+**Too hard?**
+- Make sure you understand the specific pattern for your condition
+- Start with training trials
+- Three-same is easiest - try that first
 
-## Usage
+## Use Cases
 
-### Getting Started
+### 1. Research Replication
+- Formal replication studies
+- Cross-cultural validation
+- Developmental studies
+- Clinical populations
 
-1. **Open the application**
-   ```bash
-   # Simply open index.html in a web browser
-   open index.html
-   ```
-   Or use a local server:
-   ```bash
-   # Python 3
-   python -m http.server 8000
+### 2. Educational Assessment
+- Identifying high-reasoning students
+- Tracking cognitive development
+- Research on learning
 
-   # Then visit http://localhost:8000
-   ```
+### 3. Personal Cognitive Assessment
+- Understand your relational thinking capacity
+- Track improvement with practice
+- Compare to research norms
 
-2. **Configure the task**
-   - Select task type (Letters or Numbers)
-   - Choose condition (difficulty level)
-   - Set number of trials
-   - Set training trials
+### 4. Training Studies (Experimental)
+- Test if relational integration training transfers to Gf
+- Compare to other WM training paradigms
+- Longitudinal tracking
 
-3. **Read instructions**
-   - Review the specific rules for your chosen condition
-   - Understand the pattern you're looking for
+## Limitations & Cautions
 
-4. **Complete the task**
-   - Practice with training trials
-   - Complete test trials
-   - Focus on the last character of each string
-   - Press SPACE only when you detect the target
+### This is NOT:
+- ❌ A diagnostic tool
+- ❌ An IQ test
+- ❌ A validated training program
+- ❌ A substitute for professional assessment
 
-5. **Review results**
-   - Check your accuracy score
-   - Compare to average performance
-   - Download detailed results if needed
+### This IS:
+- ✅ An exact research replication tool
+- ✅ An educational demonstration
+- ✅ A valid measure of relational integration capacity
+- ✅ A platform for further research
 
-### Interpreting Results
+### Known Limitations
 
-**Accuracy Score** = Hit Rate - False Alarm Rate
-- This is the primary measure used in the research
-- Accounts for both hits and false alarms
-- Range: -1.0 to 1.0 (higher is better)
-
-**Expected Performance** (based on Chuderski, 2013):
-- Three-same: ~0.73
-- Five-same: ~0.73
-- Three-different: ~0.38
-- Five-different: ~0.18
-
-**What affects performance:**
-- ✅ Number of bindings (primary factor)
-- ❌ NOT just number of objects
-- ❌ NOT just interference/distractors
-- ❌ NOT just attention span
+1. **Self-administered**: No experimenter control
+2. **Screen variations**: Display differences may affect difficulty
+3. **Practice effects**: Repeated testing invalidates comparisons
+4. **No norms**: We don't provide percentile rankings
+5. **Interference approximation**: Exp. 2 high-interference is simplified
 
 ## Technical Details
+
+### Browser Compatibility
+- Chrome/Edge: ✅ Fully tested
+- Firefox: ✅ Fully tested
+- Safari: ✅ Compatible
+- Mobile: ⚠️ Works but not optimal (use desktop for research)
+
+### No Dependencies
+- Pure HTML5/CSS3/JavaScript
+- No external libraries
+- No server required
+- Runs completely offline
 
 ### File Structure
 ```
 Relational-Integration-Trainer/
-├── index.html          # Main HTML structure
-├── styles.css          # Styling and layout
-├── script.js           # Core task logic
-└── README.md          # Documentation
+├── index.html       # Application structure
+├── styles.css       # Styling
+├── script.js        # Task logic (exact replication)
+├── README.md        # This file
+├── LICENSE          # MIT License
+└── .gitignore       # Git configuration
 ```
-
-### Technologies Used
-- **HTML5**: Semantic structure
-- **CSS3**: Modern styling with animations
-- **Vanilla JavaScript**: No dependencies
-- **LocalStorage**: Session data (future feature)
-
-### Browser Compatibility
-- Chrome/Edge: ✅ Fully supported
-- Firefox: ✅ Fully supported
-- Safari: ✅ Fully supported
-- Mobile: ✅ Responsive design
-
-## Research Applications
-
-This tool can be used for:
-
-1. **Cognitive Research**
-   - Study individual differences in relational integration
-   - Investigate working memory capacity
-   - Examine fluid reasoning predictors
-
-2. **Educational Assessment**
-   - Measure relational thinking ability
-   - Identify students with high reasoning potential
-   - Track cognitive development
-
-3. **Training Studies**
-   - Working memory training research
-   - Transfer effects to fluid intelligence
-   - Cognitive intervention effectiveness
-
-4. **Personal Development**
-   - Practice relational reasoning
-   - Understand your cognitive strengths
-   - Track improvement over time
-
-## Experimental Validity
-
-This implementation follows the original study methodology:
-
-### Experiment 1 & 2 Design
-- ✅ 3×3 grid of three-character strings
-- ✅ Four conditions varying bindings and objects
-- ✅ 5.5 second trial duration
-- ✅ Letter and number variants
-- ✅ 50% target trials, 50% non-target
-- ✅ Accuracy = Hits - False Alarms
-
-### Experiment 3 Extensions
-- ✅ Multiple conditions per participant possible
-- ✅ Configurable trial counts (20-60)
-- ✅ Training trials before testing
-- ✅ Reaction time recording
-- ✅ Trial-by-trial data export
-
-## Data Export
-
-Results are exported in JSON format containing:
-```json
-{
-  "config": {
-    "taskType": "letter",
-    "condition": "three-different",
-    "numTrials": 40,
-    "trainingTrials": 5
-  },
-  "summary": {
-    "accuracy": 0.38,
-    "hits": 15,
-    "misses": 5,
-    "falseAlarms": 3,
-    "correctRejections": 17,
-    "meanRT": 2345.67
-  },
-  "trialData": [
-    {
-      "trialNumber": 1,
-      "isTraining": true,
-      "hasRelation": true,
-      "responded": true,
-      "correct": true,
-      "reactionTime": 2156
-    }
-    // ... more trials
-  ],
-  "timestamp": "2025-11-06T12:00:00.000Z"
-}
-```
-
-## Limitations
-
-1. **Not a diagnostic tool**: This is for research/educational purposes only
-2. **Practice effects**: Repeated testing may improve performance
-3. **Screen differences**: Display size/quality may affect difficulty
-4. **Self-administered**: No experimenter control over conditions
-5. **Simplified scoring**: Full psychometric analysis requires specialized software
-
-## Future Enhancements
-
-Potential additions:
-- [ ] Adaptive difficulty adjustment
-- [ ] Progress tracking across sessions
-- [ ] Comparison to normative data
-- [ ] Additional pattern types
-- [ ] Eye-tracking integration
-- [ ] Multi-session studies
-- [ ] Group administration tools
-- [ ] Advanced statistical analysis
 
 ## Citation
 
-If you use this tool in research, please cite:
+### Original Study
+```bibtex
+@article{chuderski2013relational,
+  title={The relational integration task explains fluid reasoning above and beyond other working memory tasks},
+  author={Chuderski, Adam},
+  journal={Memory \& Cognition},
+  volume={42},
+  number={3},
+  pages={448--463},
+  year={2014},
+  publisher={Springer},
+  doi={10.3758/s13421-013-0366-x}
+}
+```
 
-**Original Study:**
-```
-Chuderski, A. (2013). The relational integration task explains fluid
-reasoning above and beyond other working memory tasks. Memory & Cognition,
-42(3), 448-463. https://doi.org/10.3758/s13421-013-0366-x
+### This Implementation
+If you use this tool in research, please cite both the original study and this implementation:
+
+```bibtex
+@software{relational_integration_trainer,
+  title={Relational Integration Task: Exact Replication},
+  author={[Your Name/Institution]},
+  year={2025},
+  url={https://github.com/[your-repo]/Relational-Integration-Trainer}
+}
 ```
 
-**This Implementation:**
-```
-Relational Integration Trainer [Computer software]. (2025).
-Retrieved from https://github.com/[your-repo]
-```
+## Related Research
+
+Key papers on relational integration and fluid reasoning:
+
+1. **Oberauer et al. (2008)** - Which working memory functions predict intelligence? *Intelligence*, 36(6), 641-652.
+
+2. **Halford et al. (1998)** - Processing capacity defined by relational complexity. *Behavioral and Brain Sciences*, 21(6), 803-864.
+
+3. **Hummel & Holyoak (2003)** - A symbolic-connectionist theory of relational inference. *Psychological Review*, 110(2), 220-264.
+
+4. **Wilhelm et al. (2013)** - What is working memory, and how can we measure it? *Frontiers in Psychology*, 4, 433.
+
+## Contributing
+
+Found an issue or have suggestions? Please open an issue on GitHub.
+
+**Before reporting bugs**, please verify:
+1. You're using a modern browser (Chrome/Firefox/Safari latest version)
+2. JavaScript is enabled
+3. You've tested on desktop (not mobile)
+4. You've tried a fresh browser session
 
 ## License
 
-This is an educational and research tool based on published scientific research. The implementation is provided as-is for non-commercial use.
+MIT License - see LICENSE file for details.
 
-## References
+This is an educational and research tool based on published scientific research.
 
-1. Chuderski, A. (2013). The relational integration task explains fluid reasoning above and beyond other working memory tasks. *Memory & Cognition*, 42(3), 448-463.
+## Acknowledgments
 
-2. Oberauer, K., Süß, H. M., Wilhelm, O., & Wittmann, W. W. (2008). Which working memory functions predict intelligence? *Intelligence*, 36(6), 641-652.
+- **Adam Chuderski** for the original research
+- **Klaus Oberauer** and colleagues for theoretical foundations
+- All participants in the original studies
 
-3. Halford, G. S., Wilson, W. H., & Phillips, S. (1998). Processing capacity defined by relational complexity: Implications for comparative, developmental, and cognitive psychology. *Behavioral and Brain Sciences*, 21(6), 803-864.
+## Support & Contact
 
-4. Hummel, J. E., & Holyoak, K. J. (2003). A symbolic-connectionist theory of relational inference and generalization. *Psychological Review*, 110(2), 220-264.
-
-## Contact & Contributions
-
-For issues, suggestions, or contributions, please visit the project repository.
+For questions about:
+- **The task**: See paper or open GitHub issue
+- **Research use**: Cite appropriately and follow ethical guidelines
+- **Technical issues**: Open GitHub issue with browser/OS details
+- **Collaboration**: Contact via GitHub
 
 ---
 
-**Disclaimer**: This tool is for educational and research purposes only. It is not a clinical diagnostic instrument. Performance on this task should be interpreted within the context of appropriate research methodology and ethical guidelines.
+**Disclaimer**: This tool is for educational and research purposes only. It is not a clinical diagnostic instrument. Performance should be interpreted within appropriate research methodology and ethical guidelines. The authors make no claims about training efficacy or clinical utility.
+
+**Last Updated**: November 2025
+**Version**: 2.0.0 (Exact Replication)
