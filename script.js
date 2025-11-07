@@ -71,6 +71,15 @@ class RelationalIntegrationTask {
 
         // Keyboard input
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+
+        // Mobile button input
+        document.getElementById('mobile-response-btn').addEventListener('click', () => this.handleMobileResponse());
+
+        // Also handle touch events for better mobile responsiveness
+        document.getElementById('mobile-response-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent double-firing on some devices
+            this.handleMobileResponse();
+        });
     }
 
     // ==================== Navigation ====================
@@ -535,6 +544,12 @@ class RelationalIntegrationTask {
         document.getElementById('response-indicator').textContent = '';
         document.getElementById('response-indicator').className = 'response-indicator';
 
+        // Re-enable mobile button for new trial
+        const mobileBtn = document.getElementById('mobile-response-btn');
+        if (mobileBtn) {
+            mobileBtn.disabled = false;
+        }
+
         this.responded = false;
         this.trialStartTime = Date.now();
     }
@@ -568,12 +583,25 @@ class RelationalIntegrationTask {
         this.recordResponse();
     }
 
+    handleMobileResponse() {
+        if (this.responded) return;
+        if (!document.getElementById('task-screen').classList.contains('active')) return;
+
+        this.recordResponse();
+    }
+
     recordResponse() {
         if (this.responded) return;
 
         this.responded = true;
         const reactionTime = Date.now() - this.trialStartTime;
         const trial = this.phaseTrials[this.currentTrialIndex];
+
+        // Disable mobile button after response
+        const mobileBtn = document.getElementById('mobile-response-btn');
+        if (mobileBtn) {
+            mobileBtn.disabled = true;
+        }
 
         // Record the response
         if (trial.hasRelation) {

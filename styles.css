@@ -339,6 +339,41 @@ p {
     font-size: 0.9em;
 }
 
+/* Mobile Response Button */
+.mobile-response-btn {
+    display: none; /* Hidden by default */
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.3em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    margin-top: 15px;
+    touch-action: manipulation; /* Optimize for touch */
+    -webkit-tap-highlight-color: rgba(102, 126, 234, 0.3);
+}
+
+.mobile-response-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+}
+
+.mobile-response-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.desktop-only {
+    display: block;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .screen {
@@ -368,6 +403,27 @@ p {
 
     .button-group button {
         width: 100%;
+    }
+
+    /* Show mobile button, hide desktop instruction */
+    .mobile-response-btn {
+        display: block;
+    }
+
+    .desktop-only {
+        display: none;
+    }
+
+    .experiment-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .trial-info {
+        font-size: 0.9em;
+    }
+
+    .trial-progress {
+        font-size: 1em;
     }
 }
 

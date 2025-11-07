@@ -373,7 +373,12 @@ Relational integration measures:
 - Chrome/Edge: ✅ Fully tested
 - Firefox: ✅ Fully tested
 - Safari: ✅ Compatible
-- Mobile: ⚠️ Works but not optimal (use desktop for research)
+- Mobile: ✅ **Now fully supported!**
+  - Touch-optimized response button
+  - Responsive layout for phones and tablets
+  - Desktop: Press SPACE bar
+  - Mobile: Tap the response button
+  - Note: Desktop recommended for formal research due to standardization
 
 ### No Dependencies
 - Pure HTML5/CSS3/JavaScript
