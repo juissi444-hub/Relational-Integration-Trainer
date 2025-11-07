@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relational Integration Trainer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <h1>Relational Integration Trainer</h1>
+            <div class="info-box">
+                <h2>About This Task</h2>
+                <p>This trainer is based on the research by Chuderski (2013) on relational integration and fluid reasoning.</p>
+                <p><strong>What is Relational Integration?</strong></p>
+                <p>Relational integration is the ability to bind mental representations into complex relational structures. This task measures how well you can detect patterns by integrating multiple pieces of information simultaneously.</p>
+                <p><strong>Task Overview:</strong></p>
+                <ul>
+                    <li>You will see a 3×3 grid of three-character strings (letters or numbers)</li>
+                    <li>Your task is to detect specific patterns based on the rules you select</li>
+                    <li>Each trial displays for 5.5 seconds</li>
+                    <li>Press SPACE when you detect the target pattern</li>
+                    <li>Do NOT respond if the pattern is absent</li>
+                </ul>
+            </div>
+
+            <div class="config-section">
+                <h2>Configuration</h2>
+
+                <div class="config-option">
+                    <label for="task-type">Task Type:</label>
+                    <select id="task-type">
+                        <option value="letter">Letters (Consonants)</option>
+                        <option value="number">Numbers (Digits)</option>
+                    </select>
+                </div>
+
+                <div class="config-option">
+                    <label for="condition">Condition:</label>
+                    <select id="condition">
+                        <option value="three-same">Three Same (2 bindings) - Easier</option>
+                        <option value="five-same">Five Same (2 bindings) - Easier</option>
+                        <option value="three-different">Three Different (3 bindings) - Harder</option>
+                        <option value="five-different">Five Different (5-10 bindings) - Hardest</option>
+                    </select>
+                </div>
+
+                <div class="config-option">
+                    <label for="num-trials">Number of Test Trials:</label>
+                    <select id="num-trials">
+                        <option value="20">20 (Quick)</option>
+                        <option value="40" selected>40 (Standard)</option>
+                        <option value="60">60 (Extended)</option>
+                    </select>
+                </div>
+
+                <div class="config-option">
+                    <label for="training-trials">Training Trials:</label>
+                    <select id="training-trials">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="start-btn" class="btn-primary">Start Training</button>
+        </div>
+
+        <!-- Instructions Screen -->
+        <div id="instructions-screen" class="screen">
+            <h1>Instructions</h1>
+            <div id="instruction-content" class="info-box">
+                <!-- Dynamically filled based on condition -->
+            </div>
+            <div class="button-group">
+                <button id="back-to-config-btn" class="btn-secondary">Back</button>
+                <button id="begin-task-btn" class="btn-primary">Begin Task</button>
+            </div>
+        </div>
+
+        <!-- Task Screen -->
+        <div id="task-screen" class="screen">
+            <div class="task-header">
+                <div class="trial-counter">
+                    <span id="trial-type">Training</span> Trial: <span id="current-trial">0</span> / <span id="total-trials">5</span>
+                </div>
+                <div class="timer-container">
+                    <div class="timer-bar" id="timer-bar"></div>
+                </div>
+            </div>
+
+            <div id="grid-container" class="grid-container">
+                <!-- 3x3 grid will be generated here -->
+            </div>
+
+            <div class="task-footer">
+                <div class="response-indicator" id="response-indicator"></div>
+                <p class="instruction-text">Press <strong>SPACE</strong> when you detect the target pattern</p>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <h1>Results</h1>
+            <div class="results-container">
+                <div class="results-summary">
+                    <h2>Performance Summary</h2>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Condition:</span>
+                            <span class="stat-value" id="result-condition"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Task Type:</span>
+                            <span class="stat-value" id="result-type"></span>
+                        </div>
+                        <div class="stat-item highlight">
+                            <span class="stat-label">Overall Accuracy:</span>
+                            <span class="stat-value" id="result-accuracy"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Hit Rate:</span>
+                            <span class="stat-value" id="result-hits"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">False Alarm Rate:</span>
+                            <span class="stat-value" id="result-fa"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Correct Rejections:</span>
+                            <span class="stat-value" id="result-cr"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Misses:</span>
+                            <span class="stat-value" id="result-misses"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Mean RT (Hits):</span>
+                            <span class="stat-value" id="result-rt"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-interpretation">
+                    <h3>Interpretation</h3>
+                    <p id="interpretation-text"></p>
+                    <div class="reference-box">
+                        <p><strong>Reference:</strong> Chuderski, A. (2013). The relational integration task explains fluid reasoning above and beyond other working memory tasks. Memory & Cognition, 42(3), 448-463.</p>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="download-results-btn" class="btn-secondary">Download Results</button>
+                    <button id="restart-btn" class="btn-primary">Try Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
