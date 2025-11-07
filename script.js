@@ -62,8 +62,11 @@ class RelationalIntegrationTask {
         document.getElementById('exp3-start-btn').addEventListener('click', () => this.startExperiment3());
 
         // Instructions screen
-        document.getElementById('skip-instructions-btn').addEventListener('click', () => this.beginCurrentPhase());
+        document.getElementById('back-to-menu-btn').addEventListener('click', () => this.showWelcome());
         document.getElementById('begin-task-btn').addEventListener('click', () => this.beginCurrentPhase());
+
+        // Task screen abort button
+        document.getElementById('abort-task-btn').addEventListener('click', () => this.abortTask());
 
         // Results screen
         document.getElementById('restart-btn').addEventListener('click', () => this.restart());
@@ -948,6 +951,20 @@ class RelationalIntegrationTask {
             };
         });
         return summary;
+    }
+
+    abortTask() {
+        // Clear any running timer
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+
+        // Confirm with user before aborting
+        if (confirm('Are you sure you want to abort the current task and return to the main menu? Your progress will be lost.')) {
+            this.resetExperimentState();
+            this.showWelcome();
+        }
     }
 
     restart() {
